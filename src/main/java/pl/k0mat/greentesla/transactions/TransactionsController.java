@@ -22,7 +22,7 @@ public class TransactionsController {
         return transactionService.generateReport(transactions);
     }
 
-    @GetMapping("/random-transactions")
+    @GetMapping("/randomTransactions")
     public List<Transaction> randomData(
             @RequestParam int dataSize
     ) {
