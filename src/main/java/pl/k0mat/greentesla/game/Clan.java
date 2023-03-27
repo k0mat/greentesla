@@ -10,6 +10,4 @@ import lombok.extern.jackson.Jacksonized;
 public class Clan {
     int numberOfPlayers;
     int points;
-
-
 }
