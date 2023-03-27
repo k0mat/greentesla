@@ -20,7 +20,7 @@ public class GameController {
         return gameService.calculateOrder(calculationRequest);
     }
 
-    @GetMapping("/random-queue")
+    @GetMapping("/randomQueue")
     public OrderCalculationRequest randomQueue(
             @RequestParam int dataSize
     ) {
