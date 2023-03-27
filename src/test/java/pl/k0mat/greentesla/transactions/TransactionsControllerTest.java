@@ -20,7 +20,6 @@ class TransactionsControllerTest extends BaseITTest {
                         .content(input)
                 )
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(expected));
+                .andExpect(content().json(expected, true));
     }
 }
