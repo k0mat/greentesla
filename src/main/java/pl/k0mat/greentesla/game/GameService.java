@@ -2,41 +2,57 @@ package pl.k0mat.greentesla.game;
 
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 public class GameService {
-    private static final Comparator<Clan> CLAN_COMPARATOR = Comparator.comparing(Clan::getPoints)
-            .thenComparing(
-                    Comparator.comparing(Clan::getNumberOfPlayers)
-                            .reversed()
-            ).reversed();
 
     public List<List<Clan>> calculateOrder(OrderCalculationRequest calculationRequest) {
         int maxGroupSize = calculationRequest.getGroupCount();
-        List<Clan> sortedClans = calculationRequest.getClans().stream().sorted(CLAN_COMPARATOR)
-                .collect(Collectors.toList());
-        List<List<Clan>> entryGroups = new ArrayList<>();
-
-        while (!sortedClans.isEmpty()) {
-            List<Clan> entryGroup = new ArrayList<>();
-            Clan bestClan = sortedClans.get(0);
-            entryGroup.add(bestClan);
-            int availableSpace = maxGroupSize - bestClan.getNumberOfPlayers();
-            for (int j = 1; availableSpace > 0 && j < sortedClans.size(); j++) {
-                Clan canditateClan = sortedClans.get(j);
-                if (canditateClan.getNumberOfPlayers() <= availableSpace) {
-                    entryGroup.add(canditateClan);
-                    availableSpace -= canditateClan.getNumberOfPlayers();
-                }
-            }
-            entryGroups.add(entryGroup);
-            sortedClans.removeAll(entryGroup);
+        Comparator<Clan> scoreComparator = Comparator.comparingInt(Clan::getPoints).reversed();
+        ArrayList<TreeSet<Clan>> clansBySize = new ArrayList<>(maxGroupSize);
+        for (int i = 0; i < maxGroupSize; i++) {
+            clansBySize.add(new TreeSet<>(scoreComparator));
         }
+        for (Clan clan : calculationRequest.getClans()) {
+            clansBySize.get(clan.getNumberOfPlayers() - 1).add(clan);
+        }
+        int clansLeft = calculationRequest.getClans().size();
 
+        List<List<Clan>> entryGroups = new ArrayList<>();
+        int availableSpace = maxGroupSize;
+        Clan nextClan = getNextClanAndRemove(clansBySize, availableSpace);
+        List<Clan> nextEntryGroup = new ArrayList<>();
+        while (clansLeft > 0) {
+            if (nextClan == null) {
+                availableSpace = maxGroupSize;
+                entryGroups.add(nextEntryGroup);
+                nextEntryGroup = new ArrayList<>();
+            } else {
+                nextEntryGroup.add(nextClan);
+                availableSpace -= nextClan.getNumberOfPlayers();
+                clansLeft--;
+            }
+            nextClan = getNextClanAndRemove(clansBySize, availableSpace);
+        }
+        if (!nextEntryGroup.isEmpty()) {
+            entryGroups.add(nextEntryGroup);
+        }
         return entryGroups;
+    }
+
+    private Clan getNextClanAndRemove(ArrayList<TreeSet<Clan>> clansBySize, int availableSpace) {
+        Optional<Clan> max = clansBySize.subList(0, availableSpace).stream()
+                .filter(clans -> !clans.isEmpty())
+                .map(TreeSet::first)
+                .max(Comparator.comparingInt(Clan::getPoints));
+
+        if (max.isPresent()) {
+            Clan nextClan = max.get();
+            clansBySize.get(nextClan.getNumberOfPlayers() - 1).remove(nextClan);
+            return nextClan;
+        } else {
+            return null;
+        }
     }
 }
