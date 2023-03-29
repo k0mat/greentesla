@@ -10,19 +10,38 @@ public class GameService {
     public List<List<Clan>> calculateOrder(OrderCalculationRequest calculationRequest) {
         int maxGroupSize = calculationRequest.getGroupCount();
         Comparator<Clan> scoreComparator = Comparator.comparingInt(Clan::getPoints).reversed();
-        ArrayList<TreeSet<Clan>> clansBySize = new ArrayList<>(maxGroupSize);
+        List<List<Clan>> clansBySize
+                = groupClansBySizeAndSort(calculationRequest.getClans(), maxGroupSize, scoreComparator);
+
+        long clansToTake = clansBySize.stream().mapToLong(Collection::size).sum();
+        return calculateEntryGroups(maxGroupSize, clansBySize, clansToTake);
+    }
+
+    private List<List<Clan>> groupClansBySizeAndSort(List<Clan> allClans,
+                                                     int maxGroupSize,
+                                                     Comparator<Clan> scoreComparator) {
+        List<List<Clan>> clansBySize = new ArrayList<>(maxGroupSize);
+        int initialSize = (allClans.size() / maxGroupSize) + 5;
         for (int i = 0; i < maxGroupSize; i++) {
-            clansBySize.add(new TreeSet<>(scoreComparator));
+            clansBySize.add(new ArrayList<>(initialSize));
         }
-        for (Clan clan : calculationRequest.getClans()) {
+        for (Clan clan : allClans) {
             clansBySize.get(clan.getNumberOfPlayers() - 1).add(clan);
         }
-        int clansLeft = calculationRequest.getClans().size();
+        for (List<Clan> clans : clansBySize) {
+            clans.sort(scoreComparator);
+        }
+        return clansBySize;
+    }
 
-        List<List<Clan>> entryGroups = new ArrayList<>();
+    private List<List<Clan>> calculateEntryGroups(int maxGroupSize, List<List<Clan>> clansBySize, long clansToTake) {
+        long clansLeft = clansToTake;
+
         int availableSpace = maxGroupSize;
-        Clan nextClan = getNextClanAndRemove(clansBySize, availableSpace);
+        List<List<Clan>> entryGroups = new ArrayList<>();
         List<Clan> nextEntryGroup = new ArrayList<>();
+        Clan nextClan = getNextClanAndRemove(clansBySize, availableSpace);
+
         while (clansLeft > 0) {
             if (nextClan == null) {
                 availableSpace = maxGroupSize;
@@ -35,16 +54,18 @@ public class GameService {
             }
             nextClan = getNextClanAndRemove(clansBySize, availableSpace);
         }
+
         if (!nextEntryGroup.isEmpty()) {
             entryGroups.add(nextEntryGroup);
         }
+
         return entryGroups;
     }
 
-    private Clan getNextClanAndRemove(ArrayList<TreeSet<Clan>> clansBySize, int availableSpace) {
+    private Clan getNextClanAndRemove(List<List<Clan>> clansBySize, int availableSpace) {
         Optional<Clan> max = clansBySize.subList(0, availableSpace).stream()
                 .filter(clans -> !clans.isEmpty())
-                .map(TreeSet::first)
+                .map(clans -> clans.get(0))
                 .max(Comparator.comparingInt(Clan::getPoints));
 
         if (max.isPresent()) {
