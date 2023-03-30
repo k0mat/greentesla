@@ -9,7 +9,7 @@ public class GameService {
 
     public List<List<Clan>> calculateOrder(OrderCalculationRequest calculationRequest) {
         int maxGroupSize = calculationRequest.getGroupCount();
-        Comparator<Clan> scoreComparator = Comparator.comparingInt(Clan::getPoints).reversed();
+        Comparator<Clan> scoreComparator = Comparator.comparingInt(Clan::getPoints);
         List<List<Clan>> clansBySize
                 = groupClansBySizeAndSort(calculationRequest.getClans(), maxGroupSize, scoreComparator);
 
@@ -46,7 +46,7 @@ public class GameService {
             if (nextClan == null) {
                 availableSpace = maxGroupSize;
                 entryGroups.add(nextEntryGroup);
-                nextEntryGroup = new ArrayList<>();
+                nextEntryGroup = new ArrayList<>(nextEntryGroup.size() + 5);
             } else {
                 nextEntryGroup.add(nextClan);
                 availableSpace -= nextClan.getNumberOfPlayers();
@@ -65,12 +65,13 @@ public class GameService {
     private Clan getNextClanAndRemove(List<List<Clan>> clansBySize, int availableSpace) {
         Optional<Clan> max = clansBySize.subList(0, availableSpace).stream()
                 .filter(clans -> !clans.isEmpty())
-                .map(clans -> clans.get(0))
+                .map(clans -> clans.get(clans.size() - 1))
                 .max(Comparator.comparingInt(Clan::getPoints));
 
         if (max.isPresent()) {
             Clan nextClan = max.get();
-            clansBySize.get(nextClan.getNumberOfPlayers() - 1).remove(nextClan);
+            List<Clan> clans = clansBySize.get(nextClan.getNumberOfPlayers() - 1);
+            clans.remove(clans.size() - 1);
             return nextClan;
         } else {
             return null;
