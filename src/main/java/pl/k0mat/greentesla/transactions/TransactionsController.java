@@ -8,6 +8,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestController
@@ -29,11 +30,16 @@ public class TransactionsController {
         Random random = new Random();
         List<Transaction> data = new ArrayList<>(dataSize);
         for (int i = 0; i < dataSize; i++) {
-            String creditAccount = String.valueOf(random.nextLong(dataSize, dataSize * 10L));
-            String debitAccount = String.valueOf(random.nextLong(dataSize, dataSize * 10L));
             BigDecimal amount = BigDecimal.valueOf(random.nextDouble(0.5, 1000.1)).setScale(2, RoundingMode.HALF_EVEN);
-            data.add(new Transaction(debitAccount, creditAccount, amount));
+            data.add(new Transaction(randomAccountNumber(random), randomAccountNumber(random), amount));
         }
         return data;
+    }
+
+    private String randomAccountNumber(Random random) {
+        return random.ints(26, 0, 10)
+                .boxed()
+                .map(String::valueOf)
+                .collect(Collectors.joining());
     }
 }
