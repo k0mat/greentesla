@@ -16,6 +16,7 @@ public class AtmService {
         return requests.stream()
                 .sorted(REQUEST_COMPARATOR)
                 .map(atmRequest -> new AtmJob(atmRequest.getRegion(), atmRequest.getAtmId()))
+                .distinct()
                 .collect(Collectors.toList());
     }
 }

@@ -10,6 +10,11 @@
     "atmId": 1
   },
   {
+    "region": 2,
+    "requestType": "STANDARD",
+    "atmId": 1
+  },
+  {
     "region": 3,
     "requestType": "PRIORITY",
     "atmId": 2
