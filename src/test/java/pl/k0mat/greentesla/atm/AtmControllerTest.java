@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 import pl.k0mat.greentesla.BaseITTest;
 import pl.k0mat.greentesla.ResourceReader;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,5 +36,18 @@ class AtmControllerTest extends BaseITTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().json(expected, true));
+    }
+
+    @Test
+    void testRandomQueue() throws Exception {
+        String randomQueueJson = mvc.perform(get("/atms/randomOrders")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .param("dataSize", "20000")
+        ).andReturn().getResponse().getContentAsString();
+
+        mvc.perform(post("/atms/calculateOrder")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(randomQueueJson)
+        ).andExpect(status().isOk());
     }
 }
